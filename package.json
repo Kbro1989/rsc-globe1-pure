@@ -1,0 +1,7 @@
+{
+  "name": "rsc-globe1-deployment",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd rsc-client && npm install && npm run build && cd .. && mkdir -p public && cp -r rsc-client/dist/* public/"
+  }
+}

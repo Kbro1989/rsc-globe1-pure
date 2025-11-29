@@ -285,7 +285,7 @@
                 const serverWorker = new Worker('./rsc-server.js');
                 console.log('✅ Server Worker initialized');
 
-                const { default: mudclient } = await import('./rsc-client/index.bundle.js');
+                const { default: mudclient } = await import('./rsc-client/index.bundle.min.js');
                 const canvas = document.getElementById('mudclient-canvas');
                 const mc = new mudclient(canvas);
 

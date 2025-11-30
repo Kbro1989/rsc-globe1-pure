@@ -2,28 +2,28 @@
 <html>
 
 <head>
-    <title>RSC Globe 1 - KV Cache</title>
+    <title>RSC Globe 1</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
     <style>
         * {
             margin: 0;
             padding: 0;
-            box-sizing: border-box
+            box-sizing: border-box;
         }
 
         body {
             background: #000;
             color: #fff;
             font-family: Arial;
-            overflow: hidden
+            overflow: hidden;
         }
 
         #game-container {
             width: 512px;
             height: 346px;
             margin: 20px auto;
-            position: relative
+            position: relative;
         }
 
         #mudclient-canvas {
@@ -31,11 +31,11 @@
             width: 100%;
             height: 100%;
             image-rendering: pixelated;
-            background: #000
+            background: #000;
         }
 
         .hidden {
-            display: none !important
+            display: none !important;
         }
 
         #gdpr {
@@ -47,12 +47,12 @@
             border-top: 2px solid #ffcc00;
             padding: 15px;
             z-index: 9999;
-            display: none
+            display: none;
         }
 
         #gdpr p {
             margin: 0 0 10px;
-            font-size: 14px
+            font-size: 14px;
         }
 
         #gdpr button {
@@ -61,13 +61,15 @@
             border: none;
             padding: 8px 20px;
             cursor: pointer;
-            border-radius: 4px
+            border-radius: 4px;
         }
     </style>
 </head>
 
 <body>
-    <div id="game-container"><canvas id="mudclient-canvas" width="512" height="346"></canvas></div>
+    <div id="game-container">
+        <canvas id="mudclient-canvas" width="512" height="346"></canvas>
+    </div>
     <div id="gdpr">
         <p>🍪 We use Cloudflare KV to store your game progress. By playing, you consent to this storage.</p>
         <button
@@ -76,69 +78,95 @@
     <script>
         if (!localStorage.getItem('gdpr')) document.getElementById('gdpr').style.display = 'block';
 
-        (function () {
-            var mockServerWorker = null;
+        // KV API for persistence
+        window.RSC_KV_API = {
+            async savePlayer(p) { try { return await (await fetch('/api/player/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })).json() } catch (e) { return { success: false, error: e.message } } },
+            async loadPlayer(u) { try { return await (await fetch(`/api/player/load?username=${encodeURIComponent(u)}`)).json() } catch (e) { return { success: false, error: e.message } } }
+        };
 
+        // Auto-save setup (activates when mudclient is detected)
+        let autoSaveInterval, lastSave = 0;
+        function setupAutoSave(mc) {
+            const save = async (urgent) => {
+                try {
+                    const now = Date.now();
+                    if (!urgent && now - lastSave < 5000) return;
+                    const data = {
+                        username: mc.loginUser,
+                        password: mc.loginPass,
+                        x: mc.localPlayer.currentX,
+                        y: mc.localPlayer.currentY,
+                        skills: mc.playerStatCurrent,
+                        experience: mc.playerExperience,
+                        inventory: mc.inventoryItemId.slice(0, mc.inventoryItemsCount),
+                        inventoryCount: mc.inventoryItemStackCount.slice(0, mc.inventoryItemsCount),
+                        questsComplete: mc.questComplete,
+                        questPoints: mc.playerQuestPoints,
+                        soundOn: mc.optionSoundDisabled ? 0 : 1,
+                        lastSaved: now,
+                        loginDate: mc.welcomeLastLoggedInDays || 0
+                    };
+                    const result = await window.RSC_KV_API.savePlayer(data);
+                    if (result.success) {
+                        lastSave = now;
+                        if (!urgent) console.log('💾 Auto-saved to KV');
+                    } else {
+                        console.error('KV save failed:', result.error);
+                    }
+                } catch (e) {
+                    console.error('Auto-save error:', e);
+                }
+            };
+            autoSaveInterval = setInterval(() => { if (mc.loggedIn === 1 && mc.localPlayer) save(false); }, 10000);
+            window.addEventListener('beforeunload', () => { if (mc.loggedIn === 1 && mc.localPlayer) save(true); });
+            document.addEventListener('visibilitychange', () => { if (document.hidden && mc.loggedIn === 1 && mc.localPlayer) save(false); });
+            console.log('✅ KV Auto-Save active (10s interval)');
+        }
+
+        // Initialize RSC Server as Web Worker (browser-based server)
+        const serverWorker = new Worker('./rsc-server/browser.bundle.min.js');
+        serverWorker.postMessage({
+            type: 'start',
+            config: {
+                worldID: 1,
+                version: 204,
+                members: false,
+                experienceRate: 1,
+                fatigue: true,
+                rememberCombatStyle: false
+            }
+        });
+        console.log('✅ Server Worker initialized');
+
+        // Hook to detect mudclient instance and setup KV persistence + server connection
+        (function () {
             Object.defineProperty(Object.prototype, 'localRegionX', {
                 set: function (value) {
                     if (!window.mudclientInstance && this.packetHandlers) {
-                        console.log('🎣 Captured mudclient!', this);
+                        console.log('🎣 Captured mudclient instance');
                         window.mudclientInstance = this;
-                    };
 
-                    const origClose = this.closeConnection;
-                    this.closeConnection = function () {
-                        if (this.packetStream) origClose.call(this);
-                    };
+                        // Connect server worker to client
+                        this.server = serverWorker;
+                        console.log('✅ Server connected to client');
 
-                    setTimeout(() => {
-                        const c = document.querySelector('canvas');
-                        const g = document.getElementById('game-container');
-                        if (c && g && c.parentNode !== g) {
-                            g.innerHTML = '';
-                            g.appendChild(c);
-                            c.style.width = '100%';
-                            c.style.height = '100%';
-                            console.log('✅ Canvas moved');
-                        }
-                    }, 1000);
-                }
+                        setupAutoSave(this);
+                    }
                     this._localRegionX = value;
-            },
+                },
                 get: function () { return this._localRegionX; },
                 configurable: true
             });
-        }) ();
+        })();
 
-        window.RSC_KV_API = {
-            async savePlayer(p) { try { return await (await fetch('/api/player/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })).json() } catch (e) { return { success: false, error: e.message } } },
-            async loadPlayer(u) { try { return await (await fetch(`/api/player/load?username=${encodeURIComponent(u)}`)).json() } catch (e) { return { success: false, error: e.message } } },
-            async login(u, p) { try { return await (await fetch('/api/player/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json() } catch (e) { return { success: false, error: e.message } } },
-            async register(p) { try { return await (await fetch('/api/player/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })).json() } catch (e) { return { success: false, error: e.message } } }
-        };
-        _API = window.RSC_KV_API;
-
-        let autoSaveInterval, lastSave = 0;
-        function setupAutoSave(mc) {
-            const save = async (u) => { try { const n = Date.now(); if (!u && n - lastSave < 5000) return; const d = { username: mc.loginUser, password: mc.loginPass, x: mc.localPlayer.currentX, y: mc.localPlayer.currentY, skills: mc.playerStatCurrent, experience: mc.playerExperience, inventory: mc.inventoryItemId.slice(0, mc.inventoryItemsCount), inventoryCount: mc.inventoryItemStackCount.slice(0, mc.inventoryItemsCount), questsComplete: mc.questComplete, questPoints: mc.playerQuestPoints, soundOn: mc.optionSoundDisabled ? 0 : 1, lastSaved: n, loginDate: mc.welcomeLastLoggedInDays || 0 }; const r = await window.RSC_KV_API.savePlayer(d); if (r.success) { lastSave = n; if (!u) console.log('💾 Auto-saved') } else console.error('Save failed:', r.error) } catch (e) { console.error('Save error:', e) } };
-            autoSaveInterval = setInterval(() => { if (mc.loggedIn === 1 && mc.localPlayer) save() }, 10000);
-            window.addEventListener('beforeunload', () => { if (mc.loggedIn === 1 && mc.localPlayer) save(true) });
-            document.addEventListener('visibilitychange', () => { if (document.hidden && mc.loggedIn === 1 && mc.localPlayer) save() });
-            console.log('✅ Auto-Save: ACTIVE (10s)');
-        }
-
-        async function initClient() {
-            try {
-                const s = document.createElement('script');
-                s.src = './rsc-client/index.bundle.min.js';
-                s.onload = () => console.log('✅ Client loaded');
-                s.onerror = () => console.error('Client load error');
-                document.head.appendChild(s);
-            } catch (e) {
-                console.error('Init error:', e);
-            }
-        }
-        initClient();
+        // Load client bundle
+        (function () {
+            const script = document.createElement('script');
+            script.src = './rsc-client/index.bundle.min.js';
+            script.onload = () => console.log('✅ RSC Client loaded');
+            script.onerror = () => console.error('❌ Client load failed');
+            document.head.appendChild(script);
+        })();
     </script>
 </body>
 

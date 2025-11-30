@@ -1,30 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
+    <title>RSC Globe 1</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RSC Globe 1 - Pure Preservation</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
     <style>
         * {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            box-sizing: border-box
         }
 
         body {
             background: #000;
             color: #fff;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            touch-action: none;
+            font-family: Arial;
+            overflow: hidden
         }
 
         #game-container {
-            position: relative;
             width: 512px;
             height: 346px;
-            margin: 20px auto 0;
+            margin: 20px auto
         }
 
         #mudclient-canvas {
@@ -32,97 +30,7 @@
             width: 100%;
             height: 100%;
             image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            background: #000;
-        }
-
-        #keyboard-toggle {
-            position: absolute;
-            left: 10px;
-            bottom: 50%;
-            transform: translateY(50%);
-            width: 24px;
-            height: 40px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #666;
-            border-radius: 4px;
-            cursor: pointer;
-            display: none;
-            z-index: 100;
-            font-size: 16px;
-            color: #fff;
-            text-align: center;
-            line-height: 40px;
-        }
-
-        #keyboard-toggle:hover {
-            background: rgba(50, 50, 50, 0.9);
-        }
-
-        #mobile-keyboard {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(20, 20, 20, 0.95);
-            border-top: 2px solid #666;
-            padding: 10px;
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-            z-index: 99;
-            display: none;
-        }
-
-        #mobile-keyboard.visible {
-            transform: translateY(0);
-        }
-
-        .keyboard-row {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 5px;
-        }
-
-        .key {
-            background: #333;
-            border: 1px solid #555;
-            border-radius: 3px;
-            color: #fff;
-            padding: 10px;
-            margin: 2px;
-            min-width: 30px;
-            text-align: center;
-            cursor: pointer;
-            user-select: none;
-            font-size: 14px;
-        }
-
-        .key:active {
-            background: #555;
-        }
-
-        .key.wide {
-            min-width: 60px;
-        }
-
-        .key.space {
-            min-width: 150px;
-        }
-
-        @media (max-width: 768px) {
-            #keyboard-toggle {
-                display: block;
-            }
-
-            #mobile-keyboard {
-                display: block;
-            }
-
-            #game-container {
-                margin: 10px auto 0;
-                width: 100%;
-                max-width: 512px;
-            }
+            background: #000
         }
 
         #loading {
@@ -136,21 +44,47 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 1000
         }
 
         #loading h1 {
             color: #ffcc00;
-            margin-bottom: 20px;
+            margin-bottom: 20px
         }
 
         #loading p {
             color: #ccc;
-            margin: 5px 0;
+            margin: 5px 0
         }
 
         .hidden {
-            display: none !important;
+            display: none !important
+        }
+
+        #gdpr {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            border-top: 2px solid #ffcc00;
+            padding: 15px;
+            z-index: 9999;
+            display: none
+        }
+
+        #gdpr p {
+            margin: 0 0 10px;
+            font-size: 14px
+        }
+
+        #gdpr button {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            cursor: pointer;
+            border-radius: 4px
         }
     </style>
 </head>
@@ -159,367 +93,61 @@
     <div id="loading">
         <h1>🌍 RSC Globe 1</h1>
         <p>Loading RuneScape Classic...</p>
-        <p><em>Cloudflare KV Persistence + Auto-Save</em></p>
+        <p><em>KV Persistence + Auto-Save</em></p>
     </div>
     <div id="game-container">
         <canvas id="mudclient-canvas" width="512" height="346"></canvas>
-        <button id="keyboard-toggle" title="Toggle Keyboard">⌨</button>
-        <div id="mobile-keyboard">
-            <div class="keyboard-row">
-                <div class="key" data-key="1">1</div>
-                <div class="key" data-key="2">2</div>
-                <div class="key" data-key="3">3</div>
-                <div class="key" data-key="4">4</div>
-                <div class="key" data-key="5">5</div>
-                <div class="key" data-key="6">6</div>
-                <div class="key" data-key="7">7</div>
-                <div class="key" data-key="8">8</div>
-                <div class="key" data-key="9">9</div>
-                <div class="key" data-key="0">0</div>
-            </div>
-            <div class="keyboard-row">
-                <div class="key" data-key="q">Q</div>
-                <div class="key" data-key="w">W</div>
-                <div class="key" data-key="e">E</div>
-                <div class="key" data-key="r">R</div>
-                <div class="key" data-key="t">T</div>
-                <div class="key" data-key="y">Y</div>
-                <div class="key" data-key="u">U</div>
-                <div class="key" data-key="i">I</div>
-                <div class="key" data-key="o">O</div>
-                <div class="key" data-key="p">P</div>
-            </div>
-            <div class="keyboard-row">
-                <div class="key" data-key="a">A</div>
-                <div class="key" data-key="s">S</div>
-                <div class="key" data-key="d">D</div>
-                <div class="key" data-key="f">F</div>
-                <div class="key" data-key="g">G</div>
-                <div class="key" data-key="h">H</div>
-                <div class="key" data-key="j">J</div>
-                <div class="key" data-key="k">K</div>
-                <div class="key" data-key="l">L</div>
-            </div>
-            <div class="keyboard-row">
-                <div class="key" data-key="z">Z</div>
-                <div class="key" data-key="x">X</div>
-                <div class="key" data-key="c">C</div>
-                <div class="key" data-key="v">V</div>
-                <div class="key" data-key="b">B</div>
-                <div class="key" data-key="n">N</div>
-                <div class="key" data-key="m">M</div>
-                <div class="key wide" data-key="Backspace">⌫</div>
-            </div>
-            <div class="keyboard-row">
-                <div class="key space" data-key=" ">Space</div>
-                <div class="key wide" data-key="Enter">Enter</div>
-            </div>
-        </div>
     </div>
-    <script type="module">
-        window.RSC_KV_API = {
-            async savePlayer(player) {
-                try {
-                    const response = await fetch('/api/player/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(player) });
-                    return await response.json();
-                } catch (e) { console.error('Failed to save player to KV:', e); return { success: false, error: e.message }; }
-            },
-            async loadPlayer(username) {
-                try {
-                    const response = await fetch(`/api/player/load?username=${encodeURIComponent(username)}`);
-                    return await response.json();
-                } catch (e) { console.error('Failed to load player from KV:', e); return { success: false, error: e.message }; }
-            },
-            async login(username, password) {
-                try {
-                    const response = await fetch('/api/player/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
-                    return await response.json();
-                } catch (e) { console.error('Failed to login:', e); return { success: false, error: e.message }; }
-            },
-            async register(player) {
-                try {
-                    const response = await fetch('/api/player/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(player) });
-                    return await response.json();
-                } catch (e) { console.error('Failed to register:', e); return { success: false, error: e.message }; }
-            }
-        };
-
-        function setupMobileKeyboard() {
-            const toggle = document.getElementById('keyboard-toggle');
-            const keyboard = document.getElementById('mobile-keyboard');
-            const keys = keyboard.querySelectorAll('.key');
-            toggle.addEventListener('click', () => keyboard.classList.toggle('visible'));
-            keys.forEach(key => {
-                key.addEventListener('click', () => {
-                    const keyValue = key.dataset.key;
-                    const canvas = document.getElementById('mudclient-canvas');
-                    const event = new KeyboardEvent('keydown', { key: keyValue, code: keyValue === ' ' ? 'Space' : `Key${keyValue.toUpperCase()}`, keyCode: keyValue.charCodeAt(0), which: keyValue.charCodeAt(0), bubbles: true });
-                    canvas.dispatchEvent(event);
-                    key.style.background = '#555';
-                    setTimeout(() => { key.style.background = '#333'; }, 100);
-                });
-            });
-            document.addEventListener('click', (e) => { if (!keyboard.contains(e.target) && e.target !== toggle) keyboard.classList.remove('visible'); });
-        }
-
-        let autoSaveInterval = null, lastSaveTime = 0;
-        function setupAutoSave(mc) {
-            autoSaveInterval = setInterval(async () => { if (mc.loggedIn === 1 && mc.localPlayer) await savePlayerState(mc); }, 30000);
-            window.addEventListener('beforeunload', async () => { if (mc.loggedIn === 1 && mc.localPlayer) await savePlayerState(mc, true); });
-            document.addEventListener('visibilitychange', async () => { if (document.hidden && mc.loggedIn === 1 && mc.localPlayer) await savePlayerState(mc); });
-            console.log('✅ Auto-Save: ACTIVE (every 30s + on tab switch + on close)');
-        }
-        async function savePlayerState(mc, isUnload = false) {
-            try {
-                const now = Date.now();
-                if (!isUnload && (now - lastSaveTime) < 5000) return;
-                const playerData = { username: mc.loginUser, password: mc.loginPass, x: mc.localPlayer.currentX, y: mc.localPlayer.currentY, skills: mc.playerStatCurrent, experience: mc.playerExperience, inventory: mc.inventoryItemId.slice(0, mc.inventoryItemsCount), inventoryCount: mc.inventoryItemStackCount.slice(0, mc.inventoryItemsCount), questsComplete: mc.questComplete, questPoints: mc.playerQuestPoints, soundOn: mc.optionSoundDisabled ? 0 : 1, lastSaved: now, loginDate: mc.welcomeLastLoggedInDays || 0 };
-                justify - content: center;
-                margin - bottom: 5px;
-            }
-
-        .key {
-                background: #333;
-                border: 1px solid #555;
-                border - radius: 3px;
-                color: #fff;
-                padding: 10px;
-                margin: 2px;
-                min - width: 30px;
-                text - align: center;
-                cursor: pointer;
-                user - select: none;
-                font - size: 14px;
-            }
-
-        .key:active {
-                background: #555;
-            }
-
-        .key.wide {
-                min - width: 60px;
-            }
-
-        .key.space {
-                min - width: 150px;
-            }
-
-            @media(max - width: 768px) {
-                #keyboard - toggle {
-                    display: block;
-                }
-
-                #mobile - keyboard {
-                    display: block;
-                }
-
-                #game - container {
-                    margin: 10px auto 0;
-                    width: 100 %;
-                    max - width: 512px;
-                }
-            }
-
-            #loading {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100 %;
-                height: 100 %;
-                background: #000;
-                display: flex;
-                flex - direction: column;
-                justify - content: center;
-                align - items: center;
-                z - index: 1000;
-            }
-
-            #loading h1 {
-                color: #ffcc00;
-                margin - bottom: 20px;
-            }
-
-            #loading p {
-                color: #ccc;
-                margin: 5px 0;
-            }
-
-        .hidden {
-                display: none!important;
-            }
-    </style >
-</head >
-
-                <body>
-                    <div id="loading">
-                        <h1>🌍 RSC Globe 1</h1>
-                        <p>Loading RuneScape Classic...</p>
-                        <p><em>Cloudflare KV Persistence + Auto-Save</em></p>
-                    </div>
-                    <div id="game-container">
-                        <canvas id="mudclient-canvas" width="512" height="346"></canvas>
-                        <button id="keyboard-toggle" title="Toggle Keyboard">⌨</button>
-                        <div id="mobile-keyboard">
-                            <div class="keyboard-row">
-                                <div class="key" data-key="1">1</div>
-                                <div class="key" data-key="2">2</div>
-                                <div class="key" data-key="3">3</div>
-                                <div class="key" data-key="4">4</div>
-                                <div class="key" data-key="5">5</div>
-                                <div class="key" data-key="6">6</div>
-                                <div class="key" data-key="7">7</div>
-                                <div class="key" data-key="8">8</div>
-                                <div class="key" data-key="9">9</div>
-                                <div class="key" data-key="0">0</div>
-                            </div>
-                            <div class="keyboard-row">
-                                <div class="key" data-key="q">Q</div>
-                                <div class="key" data-key="w">W</div>
-                                <div class="key" data-key="e">E</div>
-                                <div class="key" data-key="r">R</div>
-                                <div class="key" data-key="t">T</div>
-                                <div class="key" data-key="y">Y</div>
-                                <div class="key" data-key="u">U</div>
-                                <div class="key" data-key="i">I</div>
-                                <div class="key" data-key="o">O</div>
-                                <div class="key" data-key="p">P</div>
-                            </div>
-                            <div class="keyboard-row">
-                                <div class="key" data-key="a">A</div>
-                                <div class="key" data-key="s">S</div>
-                                <div class="key" data-key="d">D</div>
-                                <div class="key" data-key="f">F</div>
-                                <div class="key" data-key="g">G</div>
-                                <div class="key" data-key="h">H</div>
-                                <div class="key" data-key="j">J</div>
-                                <div class="key" data-key="k">K</div>
-                                <div class="key" data-key="l">L</div>
-                            </div>
-                            <div class="keyboard-row">
-                                <div class="key" data-key="z">Z</div>
-                                <div class="key" data-key="x">X</div>
-                                <div class="key" data-key="c">C</div>
-                                <div class="key" data-key="v">V</div>
-                                <div class="key" data-key="b">B</div>
-                                <div class="key" data-key="n">N</div>
-                                <div class="key" data-key="m">M</div>
-                                <div class="key wide" data-key="Backspace">⌫</div>
-                            </div>
-                            <div class="keyboard-row">
-                                <div class="key space" data-key=" ">Space</div>
-                                <div class="key wide" data-key="Enter">Enter</div>
-                            </div>
-                        </div>
-                    </div>
-                    <script type="module">
-                        window.RSC_KV_API = {
-                            async savePlayer(player) {
-                try {
-                    const response = await fetch('/api/player/save', {method: 'POST', headers: {'Content-Type': 'application/json' }, body: JSON.stringify(player) });
-                        return await response.json();
-                } catch (e) {console.error('Failed to save player to KV:', e); return {success: false, error: e.message }; }
-            },
-                        async loadPlayer(username) {
-                try {
-                    const response = await fetch(`/api/player/load?username=${encodeURIComponent(username)}`);
-                        return await response.json();
-                } catch (e) {console.error('Failed to load player from KV:', e); return {success: false, error: e.message }; }
-            },
-                        async login(username, password) {
-                try {
-                    const response = await fetch('/api/player/login', {method: 'POST', headers: {'Content-Type': 'application/json' }, body: JSON.stringify({username, password}) });
-                        return await response.json();
-                } catch (e) {console.error('Failed to login:', e); return {success: false, error: e.message }; }
-            },
-                        async register(player) {
-                try {
-                    const response = await fetch('/api/player/register', {method: 'POST', headers: {'Content-Type': 'application/json' }, body: JSON.stringify(player) });
-                        return await response.json();
-                } catch (e) {console.error('Failed to register:', e); return {success: false, error: e.message }; }
-            }
-        };
-
-                        function setupMobileKeyboard() {
-            const toggle = document.getElementById('keyboard-toggle');
-                        const keyboard = document.getElementById('mobile-keyboard');
-                        const keys = keyboard.querySelectorAll('.key');
-            toggle.addEventListener('click', () => keyboard.classList.toggle('visible'));
-            keys.forEach(key => {
-                            key.addEventListener('click', () => {
-                                const keyValue = key.dataset.key;
-                                const canvas = document.getElementById('mudclient-canvas');
-                                const event = new KeyboardEvent('keydown', { key: keyValue, code: keyValue === ' ' ? 'Space' : `Key${keyValue.toUpperCase()}`, keyCode: keyValue.charCodeAt(0), which: keyValue.charCodeAt(0), bubbles: true });
-                                canvas.dispatchEvent(event);
-                                key.style.background = '#555';
-                                setTimeout(() => { key.style.background = '#333'; }, 100);
-                            });
-            });
-            document.addEventListener('click', (e) => { if (!keyboard.contains(e.target) && e.target !== toggle) keyboard.classList.remove('visible'); });
-        }
-
-                        let autoSaveInterval = null, lastSaveTime = 0;
-                        function setupAutoSave(mc) {
-                            autoSaveInterval = setInterval(async () => { if (mc.loggedIn === 1 && mc.localPlayer) await savePlayerState(mc); }, 30000);
-            window.addEventListener('beforeunload', async () => { if (mc.loggedIn === 1 && mc.localPlayer) await savePlayerState(mc, true); });
-            document.addEventListener('visibilitychange', async () => { if (document.hidden && mc.loggedIn === 1 && mc.localPlayer) await savePlayerState(mc); });
-                        console.log('✅ Auto-Save: ACTIVE (every 30s + on tab switch + on close)');
-        }
-                        async function savePlayerState(mc, isUnload = false) {
-            try {
-                const now = Date.now();
-                        if (!isUnload && (now - lastSaveTime) < 5000) return;
-                        const playerData = {username: mc.loginUser, password: mc.loginPass, x: mc.localPlayer.currentX, y: mc.localPlayer.currentY, skills: mc.playerStatCurrent, experience: mc.playerExperience, inventory: mc.inventoryItemId.slice(0, mc.inventoryItemsCount), inventoryCount: mc.inventoryItemStackCount.slice(0, mc.inventoryItemsCount), questsComplete: mc.questComplete, questPoints: mc.playerQuestPoints, soundOn: mc.optionSoundDisabled ? 0 : 1, lastSaved: now, loginDate: mc.welcomeLastLoggedInDays || 0 };
-                        const result = await window.RSC_KV_API.savePlayer(playerData);
-                        if (result.success) {lastSaveTime = now; if (!isUnload) console.log('💾 Auto-saved to KV'); } else console.error('❌ Auto-save failed:', result.error);
-            } catch (e) {console.error('❌ Auto-save error:', e); }
-        }
-
-                        async function initRSCClient() {
-            try {
-                // Initialize Server Worker
-                const serverWorker = new Worker('./rsc-server.js');
-                        console.log('✅ Server Worker initialized');
-
-                        // Load client as script (UMD, not ES6 module)
-                        const script = document.createElement('script');
-                        script.src = './rsc-client/index.bundle.min.js';
-                script.onload = async () => {
-                            console.log('✅ Client script loaded');
-                        const canvas = document.getElementById('mudclient-canvas');
-                        const mc = new mudclient(canvas);
-
-                        // Connect server worker
-                        mc.server = serverWorker;
-
-                        mc.members = true;
-                        mc.threadSleep = 10;
-                        await mc.startApplication(512, 346, 'RuneScape Classic by Andrew Gower');
-                        document.getElementById('loading').classList.add('hidden');
-                        setupMobileKeyboard();
-                        setupAutoSave(mc);
-                        window.mudclient = mc;
-                        console.log('✅ RSC Client loaded | ✅ Server Connected | ✅ KV Persistence | ✅ Auto-Save');
-                };
-                script.onerror = (e) => {
-                            console.error('❌ Failed to load client script:', e);
-                        document.getElementById('loading').innerHTML = `<h1 style="color: #ff0000;">Error Loading Client</h1><p>Failed to load script</p>`;
-                };
-                        document.head.appendChild(script);
-            } catch (e) {
-                            console.error('❌ Failed to load RSC client:', e);
-                        document.getElementById('loading').innerHTML = `<h1 style="color: #ff0000;">Error Loading Client</h1><p>${e.message}</p>`;
-            }
-        }
-        initRSCClient();
-    </script>
-    <div id="gdpr-banner" style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:2px solid#ffcc00;padding:15px;z-index:9999;display:none;">
-        <p style="margin:0 0 10px;font-size:14px;">🍪 We use Cloudflare KV to store your game progress. By playing, you consent to this storage. <a href="#" style="color:#ffcc00;">Privacy Policy</a></p>
-        <button onclick="document.getElementById('gdpr-banner').style.display='none';localStorage.setItem('gdpr-accepted','1');" style="background:#ffcc00;color:#000;border:none;padding:8px 20px;cursor:pointer;border-radius:4px;">Accept</button>
+    <div id="gdpr">
+        <p>🍪 We use Cloudflare KV to store your game progress. By playing, you consent to this storage.</p>
+        <button
+            onclick="document.getElementById('gdpr').style.display='none';localStorage.setItem('gdpr','1')">Accept</button>
     </div>
     <script>
-        if (!localStorage.getItem('gdpr-accepted')) {
-            document.getElementById('gdpr-banner').style.display = 'block';
+        if(!localStorage.getItem('gdpr'))document.getElementById('gdpr').style.display='block';
+    _API={
+            async savePlayer(p){try{return await(await fetch('/api/player/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})).json()}catch(e){return{success:false,error:e.message}}},
+            async loadPlayer(u){try{return await(await fetch(`/api/player/load?username=${encodeURIComponent(u)}`)).json()}catch(e){return{success:false,error:e.message}}},
+            async login(u,p){try{return await(await fetch('/api/player/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})})).json()}catch(e){return{success:false,error:e.message}}},
+            async register(p){try{return await(await fetch('/api/player/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})).json()}catch(e){return{success:false,error:e.message}}}
+        };
+        
+        let autoSaveInterval,lastSave=0;
+        function setupAutoSave(mc){
+            const save=async(u)=>{try{const n=Date.now();if(!u&&n-lastSave<5000)return;const d={username:mc.loginUser,password:mc.loginPass,x:mc.localPlayer.currentX,y:mc.localPlayer.currentY,skills:mc.playerStatCurrent,experience:mc.playerExperience,inventory:mc.inventoryItemId.slice(0,mc.inventoryItemsCount),inventoryCount:mc.inventoryItemStackCount.slice(0,mc.inventoryItemsCount),questsComplete:mc.questComplete,questPoints:mc.playerQuestPoints,soundOn:mc.optionSoundDisabled?0:1,lastSaved:n,loginDate:mc.welcomeLastLoggedInDays||0};const r=await window.RSC_KV_API.savePlayer(d);if(r.success){lastSave=n;if(!u)console.log('💾 Auto-saved')}else console.error('Save failed:',r.error)}catch(e){console.error('Save error:',e)}};
+            autoSaveInterval=setInterval(()=>{if(mc.loggedIn===1&&mc.localPlayer)save()},30000);
+            window.addEventListener('beforeunload',()=>{if(mc.loggedIn===1&&mc.localPlayer)save(true)});
+            document.addEventListener('visibilitychange',()=>{if(document.hidden&&mc.loggedIn===1&&mc.localPlayer)save()});
+            console.log('✅ Auto-Save: ACTIVE');
         }
+        
+        async function initClient(){
+            try{
+                const w=new Worker('./rsc-server.js');
+                console.log('✅ Server Worker initialized');
+                const s=document.createElement('script');
+                s.src='./rsc-client/index.bundle.min.js';
+                s.onload=async()=>{
+                    console.log('✅ Client script loaded');
+                    const c=document.getElementById('mudclient-canvas');
+                    const mc=new mudclient(c);
+                    mc.server=w;
+                    mc.members=true;
+                    mc.threadSleep=10;
+                    await mc.startApplication(512,346,'RuneScape Classic by Andrew Gower');
+                    document.getElementById('loading').classList.add('hidden');
+                    setupAutoSave(mc);
+                    window.mudclient=mc;
+                    console.log('✅ RSC Client loaded | ✅ KV Persistence');
+                };
+                s.onerror=()=>document.getElementById('loading').innerHTML='<h1 style="color:#f00">Error Loading Client</h1>';
+                document.head.appendChild(s);
+            }catch(e){
+                console.error('Init error:',e);
+                document.getElementById('loading').innerHTML=`<h1 style="color:#f00">Error</h1><p>${e.message}</p>`;
+            }
+        }
+        initClient();
     </script>
 </body>
 

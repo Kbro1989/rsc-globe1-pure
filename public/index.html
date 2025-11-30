@@ -218,45 +218,26 @@
                             const statusDiv = document.getElementById('login-status');
                             if (statusDiv) {
                                 statusDiv.innerHTML = `${line1}<br>${line2}`;
-                                statusDiv.style.color = '#ffcc00'; // Yellow for status
-                            }
-                            console.log('Login Status:', line1, line2);
-                        };
-
-                        // Hook resetGame to hide the login overlay on success
-                        const originalResetGame = this.resetGame;
-                        this.resetGame = function () {
-                            originalResetGame.call(this);
-                            document.getElementById('login-overlay').style.display = 'none';
-                            console.log('✅ Login successful, hiding overlay');
-                        };
-
-                        // Show the HTML overlay
-                        document.getElementById('login-overlay').style.display = 'block';
-
-                        // Move the canvas
-                        setTimeout(() => {
-                            const generatedCanvas = document.querySelector('canvas');
-                            const container = document.getElementById('game-container');
-                            if (generatedCanvas && container && generatedCanvas.parentNode !== container) {
-                                container.innerHTML = '';
-                                container.appendChild(generatedCanvas);
-                                container.appendChild(loginOverlay); // Re-append overlay to be on top
-                                generatedCanvas.style.width = '100%';
-                                generatedCanvas.style.height = '100%';
-                                console.log('✅ Moved generated canvas to game container');
-                            }
-                            document.getElementById('loading').classList.add('hidden');
-                        }, 1000);
-                    }
+                                const container = document.getElementById('game-container');
+                                if (generatedCanvas && container && generatedCanvas.parentNode !== container) {
+                                    container.innerHTML = '';
+                                    container.appendChild(generatedCanvas);
+                                    container.appendChild(loginOverlay); // Re-append overlay to be on top
+                                    generatedCanvas.style.width = '100%';
+                                    generatedCanvas.style.height = '100%';
+                                    console.log('✅ Moved generated canvas to game container');
+                                }
+                                document.getElementById('loading').classList.add('hidden');
+                            }, 1000);
+        }
                     this._localRegionX = value;
                 },
-                get: function () {
-                    return this._localRegionX;
-                },
-                configurable: true
+        get: function () {
+            return this._localRegionX;
+        },
+        configurable: true
             });
-        })();
+        }) ();
 
         // --- LOGIN FORM LOGIC ---
         document.getElementById('login-form').onsubmit = async (e) => {

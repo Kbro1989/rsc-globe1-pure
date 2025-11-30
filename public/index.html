@@ -81,6 +81,8 @@
         // --- PROTOTYPE HOOK TO CAPTURE MUDCLIENT INSTANCE ---
         (function () {
             var originalLocalRegionX;
+            var mockServerWorker = null;
+
             Object.defineProperty(Object.prototype, 'localRegionX', {
                 set: function (value) {
                     // We check for packetHandlers because it's set just before localRegionX in the constructor
@@ -88,18 +90,79 @@
                         console.log('🎣 Captured mudclient instance via prototype hook!', this);
                         window.mudclientInstance = this;
 
-                        // Initialize the server worker and attach it
-                        // This is required for the client to "connect" and show its own login screen
-                        const w = new Worker('./rsc-server.js');
+                        // Initialize the server worker - DO NOT attach it to this.server
+                        // The client expects this.server to be a hostname string, not a Worker
+                        mockServerWorker = new Worker('./rsc-server.js');
                         console.log('✅ Server Worker initialized (hook)');
-                        this.server = w;
-                        this.members = true;
-                        this.threadSleep = 10;
 
                         // Setup Auto-Save (KV Persistence)
                         setupAutoSave(this);
 
-                        // Hook resetGame to hide the loading screen on success
+                        // Override createSocket to use the WorkerSocket with our mock server
+                        // This is the key to making the client use the Worker instead of WebSocket
+                        const originalCreateSocket = this.createSocket.bind(this);
+                        this.createSocket = async function (server, port) {
+                            console.log(`🔌 createSocket called with ${server}:${port}, using Worker instead`);
+
+                            // Create a simple wrapper that implements the socket interface
+                            const socket = {
+                                worker: mockServerWorker,
+                                id: 'mock-' + Math.random().toString(36).substring(7),
+                                handlers: {},
+
+                                addEventListener(name, cb) {
+                                    this.handlers[name] = cb;
+                                },
+
+                                send(data) {
+                                    this.worker.postMessage({
+                                        id: this.id,
+                                        type: 'data',
+                                        data
+                                    });
+                                },
+
+                                close() {
+                                    this.worker.postMessage({
+                                        id: this.id,
+                                        type: 'disconnect'
+                                    });
+                                    if (this.handlers.close) {
+                                        this.handlers.close();
+                                    }
+                                },
+
+                                dispatchEvent(name, args) {
+                                    const cb = this.handlers[name];
+                                    if (cb) {
+                                        cb(args);
+                                    }
+                                }
+                            };
+
+                            // Set up message handler
+                            mockServerWorker.onmessage = (e) => {
+                                if (e.data.id !== socket.id) {
+                                    return;
+                                }
+
+                                if (e.data.type === 'data') {
+                                    socket.dispatchEvent('message', e.data);
+                                } else if (e.data.type === 'disconnect') {
+                                    socket.dispatchEvent('close');
+                                }
+                            };
+
+                            // Send connect message and dispatch open event
+                            setTimeout(() => {
+                                mockServerWorker.postMessage({ id: socket.id, type: 'connect' });
+                                socket.dispatchEvent('open');
+                            }, 1);
+
+                            return socket;
+                        };
+
+                        // Hook resetGame
                         const originalResetGame = this.resetGame;
                         this.resetGame = function () {
                             originalResetGame.call(this);

@@ -871,8 +871,8 @@ class GameShell {
             this.showLoadingProgress(
                 percent,
                 `Loading ${description} - ` +
-                    ((5 + (read * 95) / archiveSizeCompressed) | 0) +
-                    '%'
+                ((5 + (read * 95) / archiveSizeCompressed) | 0) +
+                '%'
             );
         }
 
@@ -900,6 +900,17 @@ class GameShell {
     }
 
     async createSocket(server, port) {
+        // Check if server is a Worker (browser-based server)
+        if (server && typeof server === 'object' && server.postMessage) {
+            const WorkerSocket = require('./lib/net/worker-socket');
+            const socket = new WorkerSocket(server);
+            // WorkerSocket auto-connects in constructor, wrap in promise for compatibility
+            return new Promise((resolve) => {
+                socket.addEventListener('open', () => resolve(socket));
+            });
+        }
+
+        // Default: WebSocket connection
         const socket = new Socket(server, port);
         await socket.connect();
         return socket;

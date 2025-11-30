@@ -138,25 +138,29 @@
         });
         console.log('✅ Server Worker initialized');
 
-        // Hook to intercept mudclient creation and inject server BEFORE it initializes
-        // This works with the auto-executing client bundle
+        // Hook to intercept GameConnection/mudclient creation and inject server BEFORE initialization
+        // This intercepts the 'server' property assignment which happens in GameConnection constructor
         (function () {
-            Object.defineProperty(Object.prototype, 'packetHandlers', {
+            let serverIntercepted = false;
+            Object.defineProperty(Object.prototype, 'server', {
                 set: function (value) {
-                    if (!window.mudclientInstance && value && typeof value === 'object') {
-                        console.log('🎣 Intercepted mudclient creation');
+                    // Only intercept the first time (GameConnection constructor sets this.server = '127.0.0.1')
+                    if (!serverIntercepted && typeof value === 'string' && value === '127.0.0.1') {
+                        serverIntercepted = true;
+                        console.log('🎣 Intercepted GameConnection creation');
                         window.mudclientInstance = this;
 
-                        // Set server BEFORE client tries to connect
-                        this.server = serverWorker;
-                        console.log('✅ Server connected to client (before initialization)');
+                        // Replace string hostname with Worker object
+                        this._server = serverWorker;
+                        console.log('✅ Server Worker injected (replacing 127.0.0.1)');
 
-                        // Setup auto-save
-                        setupAutoSave(this);
+                        // Setup auto-save (will be called when mudclient finishes construction)
+                        setTimeout(() => setupAutoSave(this), 100);
+                        return;
                     }
-                    this._packetHandlers = value;
+                    this._server = value;
                 },
-                get: function () { return this._packetHandlers; },
+                get: function () { return this._server; },
                 configurable: true
             });
         })();

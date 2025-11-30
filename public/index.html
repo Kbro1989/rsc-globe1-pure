@@ -176,14 +176,14 @@
             <div class="rsc-box">
                 <h2>Welcome to RuneScape</h2>
             </div>
-            <div id="login-form">
+            <form id="login-form">
                 <input type="text" id="username" placeholder="Username" autocomplete="username">
                 <input type="password" id="password" placeholder="Password" autocomplete="current-password">
                 <div style="display: flex; justify-content: space-between;">
-                    <button id="btn-login">Login</button>
-                    <button id="btn-register">New User</button>
+                    <button type="submit" id="btn-login">Login</button>
+                    <button type="button" id="btn-register">New User</button>
                 </div>
-            </div>
+            </form>
             <div id="login-status"></div>
         `;
         document.getElementById('game-container').appendChild(loginOverlay);
@@ -193,7 +193,8 @@
             var originalLocalRegionX;
             Object.defineProperty(Object.prototype, 'localRegionX', {
                 set: function (value) {
-                    if (!window.mudclientInstance && this.loginUser !== undefined) {
+                    // We check for packetHandlers because it's set just before localRegionX in the constructor
+                    if (!window.mudclientInstance && this.packetHandlers) {
                         console.log('🎣 Captured mudclient instance via prototype hook!', this);
                         window.mudclientInstance = this;
 
@@ -258,7 +259,8 @@
         })();
 
         // --- LOGIN FORM LOGIC ---
-        document.getElementById('btn-login').onclick = async () => {
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             if (!user || !pass) {

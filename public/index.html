@@ -2,74 +2,69 @@
 <html>
 
 <head>
-    <!DOCTYPE html>
-    <html>
+    <title>RSC Globe 1</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
 
-    <head>
-        <title>RSC Globe 1</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box
-            }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial;
+            overflow: hidden
+        }
 
-            body {
-                background: #000;
-                color: #fff;
-                font-family: Arial;
-                overflow: hidden
-            }
+        #game-container {
+            width: 512px;
+            height: 346px;
+            margin: 20px auto;
+            position: relative;
+        }
 
-            #game-container {
-                width: 512px;
-                height: 346px;
-                margin: 20px auto;
-                position: relative;
-                /* For absolute positioning of overlay */
-            }
+        #mudclient-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            background: #000
+        }
 
-            #mudclient-canvas {
-                display: block;
-                width: 100%;
-                height: 100%;
-                image-rendering: pixelated;
-                background: #000
-            }
+        .hidden {
+            display: none !important
+        }
 
-            .hidden {
-                display: none !important
-            }
+        #gdpr {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            border-top: 2px solid #ffcc00;
+            padding: 15px;
+            z-index: 9999;
+            display: none
+        }
 
-            #gdpr {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: #1a1a1a;
-                border-top: 2px solid #ffcc00;
-                padding: 15px;
-                z-index: 9999;
-                display: none
-            }
+        #gdpr p {
+            margin: 0 0 10px;
+            font-size: 14px
+        }
 
-            #gdpr p {
-                margin: 0 0 10px;
-                font-size: 14px
-            }
-
-            #gdpr button {
-                background: #ffcc00;
-                color: #000;
-                border: none;
-                padding: 8px 20px;
-                cursor: pointer;
-                border-radius: 4px
-            }
-        </style>
-    </head>
+        #gdpr button {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            cursor: pointer;
+            border-radius: 4px
+        }
+    </style>
+</head>
 
 <body>
     <div id="game-container">
@@ -108,7 +103,6 @@
                         const originalResetGame = this.resetGame;
                         this.resetGame = function () {
                             originalResetGame.call(this);
-                            // The loading screen markup is removed, so no need to hide it.
                             console.log('✅ Login successful, game started');
                         };
 
@@ -168,11 +162,10 @@
                 s.onload = async () => {
                     console.log('✅ Client script loaded');
                 };
-                s.onerror = () => console.error('Error loading client script'); // Modified: Removed reference to #loading
+                s.onerror = () => console.error('Error loading client script');
                 document.head.appendChild(s);
             } catch (e) {
                 console.error('Init error:', e);
-                // Modified: Removed reference to #loading
             }
         }
         initClient();

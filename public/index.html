@@ -2,101 +2,76 @@
 <html>
 
 <head>
-    <title>RSC Globe 1</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box
-        }
+    <!DOCTYPE html>
+    <html>
 
-        body {
-            background: #000;
-            color: #fff;
-            font-family: Arial;
-            overflow: hidden
-        }
+    <head>
+        <title>RSC Globe 1</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box
+            }
 
-        #game-container {
-            width: 512px;
-            height: 346px;
-            margin: 20px auto;
-            position: relative;
-            /* For absolute positioning of overlay */
-        }
+            body {
+                background: #000;
+                color: #fff;
+                font-family: Arial;
+                overflow: hidden
+            }
 
-        #mudclient-canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            image-rendering: pixelated;
-            background: #000
-        }
+            #game-container {
+                width: 512px;
+                height: 346px;
+                margin: 20px auto;
+                position: relative;
+                /* For absolute positioning of overlay */
+            }
 
-        #loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000
-        }
+            #mudclient-canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+                image-rendering: pixelated;
+                background: #000
+            }
 
-        #loading h1 {
-            color: #ffcc00;
-            margin-bottom: 20px
-        }
+            .hidden {
+                display: none !important
+            }
 
-        #loading p {
-            color: #ccc;
-            margin: 5px 0
-        }
+            #gdpr {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #1a1a1a;
+                border-top: 2px solid #ffcc00;
+                padding: 15px;
+                z-index: 9999;
+                display: none
+            }
 
-        .hidden {
-            display: none !important
-        }
+            #gdpr p {
+                margin: 0 0 10px;
+                font-size: 14px
+            }
 
-        #gdpr {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #1a1a1a;
-            border-top: 2px solid #ffcc00;
-            padding: 15px;
-            z-index: 9999;
-            display: none
-        }
-
-        #gdpr p {
-            margin: 0 0 10px;
-            font-size: 14px
-        }
-
-        #gdpr button {
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 8px 20px;
-            cursor: pointer;
-            border-radius: 4px
-        }
-    </style>
-</head>
+            #gdpr button {
+                background: #ffcc00;
+                color: #000;
+                border: none;
+                padding: 8px 20px;
+                cursor: pointer;
+                border-radius: 4px
+            }
+        </style>
+    </head>
 
 <body>
-    <div id="loading">
-        <h1>🌍 RSC Globe 1</h1>
-        <p>Loading RuneScape Classic...</p>
-        <p><em>KV Persistence + Auto-Save</em></p>
-    </div>
     <div id="game-container">
         <canvas id="mudclient-canvas" width="512" height="346"></canvas>
     </div>
@@ -108,110 +83,69 @@
     <script>
         if (!localStorage.getItem('gdpr')) document.getElementById('gdpr').style.display = 'block';
 
-        // --- HTML LOGIN OVERLAY STYLES ---
-        const loginStyles = document.createElement('style');
-        loginStyles.innerHTML = `
-            #login-overlay {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 350px;
-                background: #333;
-                border: 2px solid #555;
-                padding: 20px;
-                font-family: monospace; /* Fallback for pixel font */
-                text-align: center;
-                color: #fff;
-                box-shadow: 0 0 10px #000;
-                display: none; /* Hidden by default, shown when client loads */
-                z-index: 100;
-            }
-            #login-overlay h2 {
-                color: #ffcc00;
-                margin-top: 0;
-                text-shadow: 1px 1px 0 #000;
-            }
-            #login-overlay input {
-                display: block;
-                width: 100%;
-                margin: 10px 0;
-                padding: 5px;
-                background: #000;
-                color: #fff;
-                border: 1px solid #777;
-                font-family: inherit;
-            }
-            #login-overlay button {
-                background: #555;
-                color: #fff;
-                border: 1px solid #fff;
-                padding: 5px 15px;
-                cursor: pointer;
-                margin: 5px;
-                font-family: inherit;
-                font-weight: bold;
-            }
-            #login-overlay button:hover {
-                background: #777;
-            }
-            #login-status {
-                color: #ff3333;
-                margin-top: 10px;
-                min-height: 1.2em;
-                font-size: 0.9em;
-            }
-            .rsc-box {
-                border: 2px solid #fff;
-                padding: 2px;
-                margin-bottom: 10px;
-            }
-        `;
-        document.head.appendChild(loginStyles);
+        // --- PROTOTYPE HOOK TO CAPTURE MUDCLIENT INSTANCE ---
+        (function () {
+            var originalLocalRegionX;
+            Object.defineProperty(Object.prototype, 'localRegionX', {
+                set: function (value) {
+                    // We check for packetHandlers because it's set just before localRegionX in the constructor
+                    if (!window.mudclientInstance && this.packetHandlers) {
+                        console.log('🎣 Captured mudclient instance via prototype hook!', this);
+                        window.mudclientInstance = this;
 
-        // --- HTML LOGIN OVERLAY MARKUP ---
-        const loginOverlay = document.createElement('div');
-        loginOverlay.id = 'login-overlay';
-        loginOverlay.innerHTML = `
-            <div class="rsc-box">
-                <h2>Welcome to RuneScape</h2>
-            </div>
-            <form id="login-form">
-                <input type="text" id="username" placeholder="Username" autocomplete="username">
-                <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-                <div style="display: flex; justify-content: space-between;">
-                    <button type="submit" id="btn-login">Login</button>
-                    <button type="button" id="btn-register">New User</button>
-            if (!user || !pass) {
-                document.getElementById('login-status').innerText = 'Please enter username and password';
-                return;
-            }
-            if (window.mudclientInstance) {
-                document.getElementById('login-status').innerText = 'Connecting...';
-                // Call the client's login method
-                await window.mudclientInstance.login(user, pass, false);
-            } else {
-                console.error('Mudclient instance not ready');
-            }
-        };
+                        // Initialize the server worker and attach it
+                        // This is required for the client to "connect" and show its own login screen
+                        const w = new Worker('./rsc-server.js');
+                        console.log('✅ Server Worker initialized (hook)');
+                        this.server = w;
+                        this.members = true;
+                        this.threadSleep = 10;
 
-        document.getElementById('btn-register').onclick = async () => {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-            if (!user || !pass) {
-                document.getElementById('login-status').innerText = 'Enter desired username & password';
-                return;
-            }
-            if (window.mudclientInstance) {
-                document.getElementById('login-status').innerText = 'Registering...';
-                await window.mudclientInstance.register(user, pass);
-            }
-        };
+                        // Setup Auto-Save (KV Persistence)
+                        setupAutoSave(this);
+
+                        // Hook resetGame to hide the loading screen on success
+                        const originalResetGame = this.resetGame;
+                        this.resetGame = function () {
+                            originalResetGame.call(this);
+                            // The loading screen markup is removed, so no need to hide it.
+                            console.log('✅ Login successful, game started');
+                        };
+
+                        // Hook closeConnection to prevent crash if packetStream is undefined
+                        const originalCloseConnection = this.closeConnection;
+                        this.closeConnection = function () {
+                            if (this.packetStream) {
+                                originalCloseConnection.call(this);
+                            }
+                        };
+
+                        // Move the canvas to the container
+                        setTimeout(() => {
+                            const generatedCanvas = document.querySelector('canvas');
+                            const container = document.getElementById('game-container');
+                            if (generatedCanvas && container && generatedCanvas.parentNode !== container) {
+                                container.innerHTML = '';
+                                container.appendChild(generatedCanvas);
+                                generatedCanvas.style.width = '100%';
+                                generatedCanvas.style.height = '100%';
+                                console.log('✅ Moved generated canvas to game container');
+                            }
+                        }, 1000);
+                    }
+                    this._localRegionX = value;
+                },
+                get: function () {
+                    return this._localRegionX;
+                },
+                configurable: true
+            });
+        })();
 
         // Define API client
         window.RSC_KV_API = {
             async savePlayer(p) { try { return await (await fetch('/api/player/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })).json() } catch (e) { return { success: false, error: e.message } } },
-            async loadPlayer(u) { try { return await (await fetch(`/ api / player / load ? username = ${ encodeURIComponent(u) } `)).json() } catch (e) { return { success: false, error: e.message } } },
+            async loadPlayer(u) { try { return await (await fetch(`/api/player/load?username=${encodeURIComponent(u)}`)).json() } catch (e) { return { success: false, error: e.message } } },
             async login(u, p) { try { return await (await fetch('/api/player/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json() } catch (e) { return { success: false, error: e.message } } },
             async register(p) { try { return await (await fetch('/api/player/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })).json() } catch (e) { return { success: false, error: e.message } } }
         };
@@ -221,10 +155,10 @@
         let autoSaveInterval, lastSave = 0;
         function setupAutoSave(mc) {
             const save = async (u) => { try { const n = Date.now(); if (!u && n - lastSave < 5000) return; const d = { username: mc.loginUser, password: mc.loginPass, x: mc.localPlayer.currentX, y: mc.localPlayer.currentY, skills: mc.playerStatCurrent, experience: mc.playerExperience, inventory: mc.inventoryItemId.slice(0, mc.inventoryItemsCount), inventoryCount: mc.inventoryItemStackCount.slice(0, mc.inventoryItemsCount), questsComplete: mc.questComplete, questPoints: mc.playerQuestPoints, soundOn: mc.optionSoundDisabled ? 0 : 1, lastSaved: n, loginDate: mc.welcomeLastLoggedInDays || 0 }; const r = await window.RSC_KV_API.savePlayer(d); if (r.success) { lastSave = n; if (!u) console.log('💾 Auto-saved') } else console.error('Save failed:', r.error) } catch (e) { console.error('Save error:', e) } };
-            autoSaveInterval = setInterval(() => { if (mc.loggedIn === 1 && mc.localPlayer) save() }, 30000);
+            autoSaveInterval = setInterval(() => { if (mc.loggedIn === 1 && mc.localPlayer) save() }, 10000); // Saved every 10s
             window.addEventListener('beforeunload', () => { if (mc.loggedIn === 1 && mc.localPlayer) save(true) });
             document.addEventListener('visibilitychange', () => { if (document.hidden && mc.loggedIn === 1 && mc.localPlayer) save() });
-            console.log('✅ Auto-Save: ACTIVE');
+            console.log('✅ Auto-Save: ACTIVE (10s interval)');
         }
 
         async function initClient() {
@@ -234,11 +168,11 @@
                 s.onload = async () => {
                     console.log('✅ Client script loaded');
                 };
-                s.onerror = () => document.getElementById('loading').innerHTML = '<h1 style="color:#f00">Error Loading Client</h1>';
+                s.onerror = () => console.error('Error loading client script'); // Modified: Removed reference to #loading
                 document.head.appendChild(s);
             } catch (e) {
                 console.error('Init error:', e);
-                document.getElementById('loading').innerHTML = `< h1 style = "color:#f00" > Error</h1 > <p>${e.message}</p>`;
+                // Modified: Removed reference to #loading
             }
         }
         initClient();

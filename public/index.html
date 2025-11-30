@@ -512,6 +512,15 @@
         }
         initRSCClient();
     </script>
+    <div id="gdpr-banner" style="position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:2px solid#ffcc00;padding:15px;z-index:9999;display:none;">
+        <p style="margin:0 0 10px;font-size:14px;">🍪 We use Cloudflare KV to store your game progress. By playing, you consent to this storage. <a href="#" style="color:#ffcc00;">Privacy Policy</a></p>
+        <button onclick="document.getElementById('gdpr-banner').style.display='none';localStorage.setItem('gdpr-accepted','1');" style="background:#ffcc00;color:#000;border:none;padding:8px 20px;cursor:pointer;border-radius:4px;">Accept</button>
+    </div>
+    <script>
+        if (!localStorage.getItem('gdpr-accepted')) {
+            document.getElementById('gdpr-banner').style.display = 'block';
+        }
+    </script>
 </body>
 
 </html>

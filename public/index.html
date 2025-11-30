@@ -480,7 +480,7 @@
                 const serverWorker = new Worker('./rsc-server.js');
                         console.log('✅ Server Worker initialized');
 
-                        // Load client as script (UMD bundle, not ES6 module)
+                        // Load client as script (UMD, not ES6 module)
                         const script = document.createElement('script');
                         script.src = './rsc-client/index.bundle.min.js';
                 script.onload = async () => {
@@ -507,7 +507,7 @@
                         document.head.appendChild(script);
             } catch (e) {
                             console.error('❌ Failed to load RSC client:', e);
-                        document.getElementById('loading').innerHTML = `<h1 style="color: #ff0000;">Error Loading Client</h1><p>${e.message}</p><p><em>Check console for details</em></p>`;
+                        document.getElementById('loading').innerHTML = `<h1 style="color: #ff0000;">Error Loading Client</h1><p>${e.message}</p>`;
             }
         }
         initRSCClient();

@@ -138,54 +138,37 @@
         });
         console.log('✅ Server Worker initialized');
 
-        // Function to initialize client (called when server is ready)
-        let clientInitialized = false;
-        function initializeClient() {
-            if (clientInitialized) return;
-            clientInitialized = true;
+        // Hook to intercept mudclient creation and inject server BEFORE it initializes
+        // This works with the auto-executing client bundle
+        (function () {
+            Object.defineProperty(Object.prototype, 'packetHandlers', {
+                set: function (value) {
+                    if (!window.mudclientInstance && value && typeof value === 'object') {
+                        console.log('🎣 Intercepted mudclient creation');
+                        window.mudclientInstance = this;
 
-            console.log('✅ Starting client initialization...');
+                        // Set server BEFORE client tries to connect
+                        this.server = serverWorker;
+                        console.log('✅ Server connected to client (before initialization)');
 
-            // Load and initialize client
+                        // Setup auto-save
+                        setupAutoSave(this);
+                    }
+                    this._packetHandlers = value;
+                },
+                get: function () { return this._packetHandlers; },
+                configurable: true
+            });
+        })();
+
+        // Load client bundle (it will auto-execute and create mudclient)
+        (function () {
             const script = document.createElement('script');
             script.src = './rsc-client/index.bundle.min.js';
-            script.onload = () => {
-                console.log('✅ RSC Client bundle loaded');
-
-                // Create mudclient instance and connect server BEFORE it initializes
-                const canvas = document.getElementById('mudclient-canvas');
-                window.mudclientInstance = new mudclient(canvas);
-                window.mudclientInstance.server = serverWorker;
-                console.log('✅ Server connected to client');
-
-                // Setup auto-save
-                setupAutoSave(window.mudclientInstance);
-
-                // Start the client
-                (async () => {
-                    await window.mudclientInstance.startApplication(512, 346, 'RuneScape Classic');
-                })();
-            };
+            script.onload = () => console.log('✅ RSC Client loaded');
             script.onerror = () => console.error('❌ Client load failed');
             document.head.appendChild(script);
-        }
-
-        // Listen for server ready message
-        serverWorker.addEventListener('message', function (event) {
-            console.log('Server Worker message:', event.data);
-            if (event.data.type === 'ready' || event.data.started) {
-                console.log('✅ Server ready');
-                initializeClient();
-            }
-        });
-
-        // Fallback: Start client after 1 second if no ready message received
-        setTimeout(() => {
-            if (!clientInitialized) {
-                console.log('⚠️  No ready message from server, starting anyway...');
-                initializeClient();
-            }
-        }, 1000);
+        })();
     </script>
 </body>
 

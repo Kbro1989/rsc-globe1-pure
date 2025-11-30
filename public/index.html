@@ -84,145 +84,31 @@
                     if (!window.mudclientInstance && this.packetHandlers) {
                         console.log('🎣 Captured mudclient!', this);
                         window.mudclientInstance = this;
+                    };
 
-                        mockServerWorker = new Worker('./rsc-server.js');
-                        console.log('✅ Worker initialized');
+                    const origClose = this.closeConnection;
+                    this.closeConnection = function () {
+                        if (this.packetStream) origClose.call(this);
+                    };
 
-                        setupAutoSave(this);
-
-                        this.createSocket = async function (server, port) {
-                            console.log(`🔌 Using Worker instead of ${server}:${port}`);
-
-                            const socket = {
-                                worker: mockServerWorker,
-                                id: 'w' + Date.now(),
-                                handlers: {},
-                                connected: false,
-                                bytesAvail: 0,
-                                buffers: [],
-                                curBuf: null,
-                                off: 0,
-                                left: 0,
-
-                                addEventListener(name, cb) { this.handlers[name] = cb; },
-                                dispatchEvent(name, args) { if (this.handlers[name]) this.handlers[name](args); },
-
-                                write(bytes, offset = 0, length = -1) {
-                                    if (!this.connected) throw new Error('socket closed');
-                                    length = length === -1 ? bytes.length : length;
-                                    this.worker.postMessage({ id: this.id, type: 'data', data: bytes.slice(offset, offset + length) });
-                                },
-
-                                refreshCurrentBuffer() {
-                                    if (this.left === 0 && this.bytesAvail > 0) {
-                                        this.curBuf = this.buffers.shift();
-                                        this.off = 0;
-                                        this.left = (this.curBuf && this.curBuf.length) ? this.curBuf.length : 0;
-                                    }
-                                },
-
-                                async read() {
-                                    if (!this.connected) return -1;
-                                    if (this.left > 0) {
-                                        this.left--;
-                                        this.bytesAvail--;
-                                        return this.curBuf[this.off++] & 0xff;
-                                    }
-                                    const b = await new Promise(r => { this.onNext = r; });
-                                    if (b === -1) return -1;
-                                    return await this.read();
-                                },
-
-                                async readBytes(dest, offset = 0, length = -1) {
-                                    if (!this.connected) return -1;
-                                    length = length === -1 ? dest.length : length;
-                                    if (this.bytesAvail >= length) {
-                                        while (length > 0) {
-                                            dest[offset++] = this.curBuf[this.off++] & 0xff;
-                                            this.left--;
-                                            this.bytesAvail--;
-                                            length--;
-                                            if (this.left === 0) this.refreshCurrentBuffer();
-                                        }
-                                        return;
-                                    }
-                                    const b = await new Promise(r => { this.onNext = r; });
-                                    if (b === -1) return -1;
-                                    return await this.readBytes(dest, offset, length);
-                                },
-
-                                available() { return this.bytesAvail; },
-
-                                close() {
-                                    if (!this.connected) return;
-                                    this.worker.postMessage({ id: this.id, type: 'disconnect' });
-                                    this.connected = false;
-                                    this.dispatchEvent('close');
-                                },
-
-                                clear() {
-                                    if (this.connected) this.close();
-                                    this.curBuf = null;
-                                    this.buffers.length = 0;
-                                    this.left = 0;
-                                }
-                            };
-
-                            mockServerWorker.onmessage = (e) => {
-                                if (e.data.id !== socket.id) return;
-                                if (e.data.type === 'data') {
-                                    socket.buffers.push(new Int8Array(e.data.data));
-                                    socket.bytesAvail += e.data.data.byteLength || e.data.data.length;
-                                    socket.refreshCurrentBuffer();
-                                    if (socket.onNext) {
-                                        socket.onNext(e.data.data.byteLength || e.data.data.length);
-                                        socket.onNext = undefined;
-                                    }
-                                    socket.dispatchEvent('message', e.data);
-                                } else if (e.data.type === 'disconnect') {
-                                    socket.connected = false;
-                                    socket.dispatchEvent('close');
-                                }
-                            };
-
-                            setTimeout(() => {
-                                mockServerWorker.postMessage({ id: socket.id, type: 'connect' });
-                                socket.connected = true;
-                                socket.dispatchEvent('open');
-                            }, 1);
-
-                            return socket;
-                        };
-
-                        const origReset = this.resetGame;
-                        this.resetGame = function () {
-                            origReset.call(this);
-                            console.log('✅ Login successful');
-                        };
-
-                        const origClose = this.closeConnection;
-                        this.closeConnection = function () {
-                            if (this.packetStream) origClose.call(this);
-                        };
-
-                        setTimeout(() => {
-                            const c = document.querySelector('canvas');
-                            const g = document.getElementById('game-container');
-                            if (c && g && c.parentNode !== g) {
-                                g.innerHTML = '';
-                                g.appendChild(c);
-                                c.style.width = '100%';
-                                c.style.height = '100%';
-                                console.log('✅ Canvas moved');
-                            }
-                        }, 1000);
-                    }
+                    setTimeout(() => {
+                        const c = document.querySelector('canvas');
+                        const g = document.getElementById('game-container');
+                        if (c && g && c.parentNode !== g) {
+                            g.innerHTML = '';
+                            g.appendChild(c);
+                            c.style.width = '100%';
+                            c.style.height = '100%';
+                            console.log('✅ Canvas moved');
+                        }
+                    }, 1000);
+                }
                     this._localRegionX = value;
-                },
+            },
                 get: function () { return this._localRegionX; },
                 configurable: true
             });
-        })();
+        }) ();
 
         window.RSC_KV_API = {
             async savePlayer(p) { try { return await (await fetch('/api/player/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })).json() } catch (e) { return { success: false, error: e.message } } },

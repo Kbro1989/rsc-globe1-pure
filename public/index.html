@@ -92,112 +92,38 @@
 
                         // Initialize the server worker - DO NOT attach it to this.server
                         // The client expects this.server to be a hostname string, not a Worker
-                        mockServerWorker = new Worker('./rsc-server.js');
-                        console.log('✅ Server Worker initialized (hook)');
+                        console.log('✅ Login successful, game started');
+                    };
 
-                        // Setup Auto-Save (KV Persistence)
-                        setupAutoSave(this);
+                    // Hook closeConnection to prevent crash if packetStream is undefined
+                    const originalCloseConnection = this.closeConnection;
+                    this.closeConnection = function () {
+                        if (this.packetStream) {
+                            originalCloseConnection.call(this);
+                        }
+                    };
 
-                        // Override createSocket to use the WorkerSocket with our mock server
-                        // This is the key to making the client use the Worker instead of WebSocket
-                        const originalCreateSocket = this.createSocket.bind(this);
-                        this.createSocket = async function (server, port) {
-                            console.log(`🔌 createSocket called with ${server}:${port}, using Worker instead`);
-
-                            // Create a simple wrapper that implements the socket interface
-                            const socket = {
-                                worker: mockServerWorker,
-                                id: 'mock-' + Math.random().toString(36).substring(7),
-                                handlers: {},
-
-                                addEventListener(name, cb) {
-                                    this.handlers[name] = cb;
-                                },
-
-                                send(data) {
-                                    this.worker.postMessage({
-                                        id: this.id,
-                                        type: 'data',
-                                        data
-                                    });
-                                },
-
-                                close() {
-                                    this.worker.postMessage({
-                                        id: this.id,
-                                        type: 'disconnect'
-                                    });
-                                    if (this.handlers.close) {
-                                        this.handlers.close();
-                                    }
-                                },
-
-                                dispatchEvent(name, args) {
-                                    const cb = this.handlers[name];
-                                    if (cb) {
-                                        cb(args);
-                                    }
-                                }
-                            };
-
-                            // Set up message handler
-                            mockServerWorker.onmessage = (e) => {
-                                if (e.data.id !== socket.id) {
-                                    return;
-                                }
-
-                                if (e.data.type === 'data') {
-                                    socket.dispatchEvent('message', e.data);
-                                } else if (e.data.type === 'disconnect') {
-                                    socket.dispatchEvent('close');
-                                }
-                            };
-
-                            // Send connect message and dispatch open event
-                            setTimeout(() => {
-                                mockServerWorker.postMessage({ id: socket.id, type: 'connect' });
-                                socket.dispatchEvent('open');
-                            }, 1);
-
-                            return socket;
-                        };
-
-                        // Hook resetGame
-                        const originalResetGame = this.resetGame;
-                        this.resetGame = function () {
-                            originalResetGame.call(this);
-                            console.log('✅ Login successful, game started');
-                        };
-
-                        // Hook closeConnection to prevent crash if packetStream is undefined
-                        const originalCloseConnection = this.closeConnection;
-                        this.closeConnection = function () {
-                            if (this.packetStream) {
-                                originalCloseConnection.call(this);
-                            }
-                        };
-
-                        // Move the canvas to the container
-                        setTimeout(() => {
-                            const generatedCanvas = document.querySelector('canvas');
-                            const container = document.getElementById('game-container');
-                            if (generatedCanvas && container && generatedCanvas.parentNode !== container) {
-                                container.innerHTML = '';
-                                container.appendChild(generatedCanvas);
-                                generatedCanvas.style.width = '100%';
-                                generatedCanvas.style.height = '100%';
-                                console.log('✅ Moved generated canvas to game container');
-                            }
-                        }, 1000);
-                    }
+                    // Move the canvas to the container
+                    setTimeout(() => {
+                        const generatedCanvas = document.querySelector('canvas');
+                        const container = document.getElementById('game-container');
+                        if (generatedCanvas && container && generatedCanvas.parentNode !== container) {
+                            container.innerHTML = '';
+                            container.appendChild(generatedCanvas);
+                            generatedCanvas.style.width = '100%';
+                            generatedCanvas.style.height = '100%';
+                            console.log('✅ Moved generated canvas to game container');
+                        }
+                    }, 1000);
+                }
                     this._localRegionX = value;
-                },
+            },
                 get: function () {
                     return this._localRegionX;
                 },
                 configurable: true
             });
-        })();
+        }) ();
 
         // Define API client
         window.RSC_KV_API = {
